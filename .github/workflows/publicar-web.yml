@@ -1,0 +1,48 @@
+# Copia la web de Cloudflare (langsushi.pages.dev), aplica parches pendientes y publica en GitHub Pages.
+name: Publicar web (copia + parches)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicar.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+      - name: Descargar la web de Cloudflare
+        run: |
+          set -e
+          ORIGEN=https://langsushi.pages.dev
+          mkdir -p site && cd site
+          curl -fsSL --retry 3 "$ORIGEN/files.txt" -o ../files.txt
+          while read -r f; do
+            [ -z "$f" ] && continue
+            mkdir -p "$(dirname "$f")"
+            curl -fsSL --retry 3 "$ORIGEN/$f" -o "$f"
+          done < ../files.txt
+          echo 'window.LC_API = "https://langsushi-reservas.langcitysushi.workers.dev/api";' > config.js
+          echo "langsushi.es" > CNAME
+          touch .nojekyll
+          test -s index.html && test -s carta/index.html
+      - name: Aplicar parches
+        run: |
+          for p in repo/patch_*.py; do [ -f "$p" ] && python3 "$p" site; done
+          echo "Archivos: $(find site -type f | wc -l)"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: publicar
+        uses: actions/deploy-pages@v4
