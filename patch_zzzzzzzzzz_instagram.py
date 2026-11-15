@@ -24,7 +24,13 @@ def main(site):
     try:
         from PIL import Image, ImageDraw, ImageFont
     except ImportError:
-        subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'pillow'], check=False)
+        tgt = os.path.join(os.path.dirname(os.path.abspath(site)), '_pylib')
+        for extra in (['--break-system-packages'], []):
+            subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--target', tgt] + extra + ['pillow'], check=False)
+            if os.path.isdir(os.path.join(tgt, 'PIL')):
+                break
+        sys.path.insert(0, tgt)
+        import importlib; importlib.invalidate_caches()
         from PIL import Image, ImageDraw, ImageFont
     out = os.path.join(site, 'instagram')
     os.makedirs(out, exist_ok=True)
