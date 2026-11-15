@@ -12,10 +12,10 @@ POSTS = [
 ]
 CAROUSEL = ['9A', '7', '3A', '41', 'C2']
 FONTS = {
-    'bold': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-ext-700-normal.woff',
-    'semi': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-ext-600-normal.woff',
-    'med': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-ext-500-normal.woff',
-    'reg': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-ext-400-normal.woff',
+    'bold': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-700-normal.woff',
+    'semi': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-600-normal.woff',
+    'med': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-500-normal.woff',
+    'reg': 'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-400-normal.woff',
 }
 FALLBACK = {'bold': 'DejaVuSans-Bold.ttf', 'semi': 'DejaVuSans-Bold.ttf', 'med': 'DejaVuSans.ttf', 'reg': 'DejaVuSans.ttf'}
 
@@ -41,7 +41,9 @@ def main(site):
         p = os.path.join(fdir, k + '.woff')
         try:
             urllib.request.urlretrieve(u, p)
-            ImageFont.truetype(p, 20)
+            ft = ImageFont.truetype(p, 40)
+            if ft.getmask('a').tobytes() == ft.getmask('b').tobytes():
+                raise ValueError('fuente sin letras')
             fpath[k] = p
         except Exception:
             fpath[k] = FALLBACK[k]
