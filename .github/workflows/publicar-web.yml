@@ -18,7 +18,7 @@ jobs:
       name: github-pages
       url: ${{ steps.publicar.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           path: repo
       - name: Descargar la web de Cloudflare
@@ -40,9 +40,21 @@ jobs:
         run: |
           for p in repo/patch_*.py; do [ -f "$p" ] && python3 "$p" site; done
           echo "Archivos: $(find site -type f | wc -l)"
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
+          include-hidden-files: true
+      # A veces GitHub tarda en registrar el artefacto recien subido y el
+      # despliegue falla con "No artifacts named github-pages". Se reintenta.
+      - id: intento1
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - name: Esperar antes de reintentar
+        if: steps.intento1.outcome == 'failure'
+        run: sleep 45
+      - id: intento2
+        if: steps.intento1.outcome == 'failure'
+        uses: actions/deploy-pages@v5
       - id: publicar
-        uses: actions/deploy-pages@v4
+        run: echo "page_url=${{ steps.intento1.outputs.page_url || steps.intento2.outputs.page_url }}" >> "$GITHUB_OUTPUT"
